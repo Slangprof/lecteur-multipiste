@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lecteur multipiste">
+<meta name="theme-color" content="#0f0f0f">
+<title>Lecteur multipiste</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0f0f;
+  --surface: #181818;
+  --surface2: #222;
+  --border: #2e2e2e;
+  --border2: #3a3a3a;
+  --text: #e0e0e0;
+  --text2: #888;
+  --text3: #555;
+  --gold: #c8a96e;
+  --gold2: #d9bb82;
+  --green: #5a9e6f;
+  --green2: #6db87d;
+  --red: #c0504a;
+  --blue: #4a7fa5;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+}
+
+h1 {
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.header-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 0.4rem;
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: var(--text3);
+  margin-bottom: 2rem;
+}
+
+/* Transport global */
+.transport {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.transport-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-transport {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 1rem;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.btn-transport:hover { background: var(--border); }
+.btn-transport.active { background: var(--gold); color: #111; border-color: var(--gold); }
+
+.time-display {
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  color: var(--gold);
+  min-width: 90px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  text-align: center;
+}
+
+.progress-wrap {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.1s linear;
+  pointer-events: none;
+}
+
+.speed-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--text2);
+}
+
+.speed-wrap input[type=range] {
+  width: 100px;
+  accent-color: var(--gold);
+}
+
+/* Loop section */
+.loop-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--text2);
+}
+
+.btn-loop {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text2);
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-loop.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+/* Pistes */
+.tracks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.tracks-header-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+
+.btn-add {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text2);
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-add:hover { border-color: var(--gold); color: var(--gold); }
+
+.tracks-list { display: flex; flex-direction: column; gap: 8px; }
+
+.track {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  transition: border-color 0.15s;
+}
+
+.track:hover { border-color: var(--border2); }
+.track.muted { opacity: 0.45; }
+.track.solo-active { border-color: var(--gold); }
+
+.track-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.track-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.track-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.track-name {
+  font-size: 0.88rem;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+}
+
+.track-name:focus {
+  border-bottom: 1px solid var(--gold);
+}
+
+.track-file-label {
+  font-size: 0.7rem;
+  color: var(--text3);
+  cursor: pointer;
+  transition: color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.track-file-label:hover { color: var(--gold); }
+.track-file-label.loaded { color: var(--green2); }
+
+.track-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.volume-label {
+  font-size: 0.7rem;
+  color: var(--text3);
+  min-width: 24px;
+  text-align: right;
+}
+
+.track-volume {
+  flex: 1;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+/* VU meter */
+.vu-meter {
+  width: 8px;
+  height: 32px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.vu-fill {
+  width: 100%;
+  background: var(--green2);
+  border-radius: 2px;
+  height: 0%;
+  transition: height 0.05s;
+}
+
+.track-right {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.btn-track {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text2);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.05em;
+}
+
+.btn-mute:hover, .btn-mute.active { background: var(--red); border-color: var(--red); color: #fff; }
+.btn-solo:hover, .btn-solo.active { background: var(--gold); border-color: var(--gold); color: #111; }
+
+.btn-remove {
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.btn-remove:hover { color: var(--red); }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text3);
+  font-size: 0.85rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.empty-state .icon { font-size: 2rem; margin-bottom: 0.75rem; opacity: 0.5; }
+
+/* Waveform mini */
+.waveform {
+  flex: 1;
+  height: 32px;
+  background: var(--surface2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.waveform canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Widgets vitesse / tonalité */
+.widgets-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+.widget {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 130px;
+}
+.widget-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.widget-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.widget-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text2);
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  user-select: none;
+}
+.widget-btn:hover { background: var(--border2); color: var(--text); }
+.widget-btn:active { transform: scale(0.92); }
+.widget-value {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--gold);
+  min-width: 52px;
+  text-align: center;
+}
+.widget-reset {
+  font-size: 0.65rem;
+  color: var(--text3);
+  cursor: pointer;
+  transition: color 0.15s;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.widget-reset:hover { color: var(--gold); }
+
+/* Footer */
+.footer {
+  margin-top: 2rem;
+  font-size: 0.72rem;
+  color: var(--text3);
+  text-align: center;
+}
+
+input[type=file] { display: none; }
+
+@media (max-width: 640px) {
+  .track {
+    grid-template-columns: 1fr;
+  }
+  .transport { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<div class="header-label">Outil pédagogique</div>
+<h1>Lecteur multipiste</h1>
+<p class="subtitle">Chargez vos pistes MP3 — volume, mute, solo, vitesse et boucle</p>
+
+<!-- Transport -->
+<div class="transport">
+  <div class="transport-controls">
+    <button class="btn-transport" id="btn-play" onclick="togglePlay()" title="Lecture / Pause">▶</button>
+    <button class="btn-transport" onclick="stopAll()" title="Stop">■</button>
+    <div class="time-display" id="time-display">0:00.0</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar-bg" id="progress-bg" onclick="seekTo(event)">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Widgets Vitesse + Tonalité + Boucle -->
+<div class="widgets-row">
+
+  <div class="widget">
+    <div class="widget-label">Vitesse</div>
+    <div class="widget-controls">
+      <button class="widget-btn" onclick="adjustSpeed(-5)">−</button>
+      <div class="widget-value" id="speed-val">100%</div>
+      <button class="widget-btn" onclick="adjustSpeed(+5)">+</button>
+    </div>
+    <button class="widget-reset" onclick="resetSpeed()">Réinitialiser</button>
+    <input type="hidden" id="speed" value="1">
+  </div>
+
+  <div class="widget">
+    <div class="widget-label">Tonalité</div>
+    <div class="widget-controls">
+      <button class="widget-btn" onclick="adjustPitch(-1)">−</button>
+      <div class="widget-value" id="pitch-val">0</div>
+      <button class="widget-btn" onclick="adjustPitch(+1)">+</button>
+    </div>
+    <button class="widget-reset" onclick="resetPitch()">Réinitialiser</button>
+  </div>
+
+  <div class="widget" style="min-width:210px;">
+    <div class="widget-label">Boucle</div>
+    <div class="widget-controls">
+      <button class="btn-loop" id="btn-loop" onclick="toggleLoop()">⟳ Activer</button>
+    </div>
+    <div id="loop-times-wrap" style="display:none; gap:6px; align-items:center; flex-wrap:wrap; justify-content:center; margin-top:4px;">
+      <input type="number" id="loop-start" min="0" step="0.1" value="0" style="width:55px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text); padding:3px 6px; font-size:0.75rem;" placeholder="Début">
+      <span style="color:var(--text3);">→</span>
+      <input type="number" id="loop-end" min="0" step="0.1" value="10" style="width:55px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text); padding:3px 6px; font-size:0.75rem;" placeholder="Fin">
+      <span style="color:var(--text3); font-size:0.75rem;">sec</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Pistes -->
+<div class="tracks-header">
+  <div class="tracks-header-label">Pistes (<span id="track-count">0</span>/12)</div>
+  <div style="display:flex; gap:8px;">
+    <label class="btn-add" for="multi-file-input" style="cursor:pointer;">⤴ Charger plusieurs MP3</label>
+    <input type="file" id="multi-file-input" accept="audio/mp3,audio/mpeg,audio/*" multiple onchange="loadMultipleFiles(this)">
+    <button class="btn-add" onclick="addTrack()">＋ Ajouter une piste vide</button>
+  </div>
+</div>
+
+<div class="tracks-list" id="tracks-list">
+  <div class="empty-state" id="empty-state">
+    <div class="icon">🎵</div>
+    Ajoutez jusqu'à 12 pistes MP3<br>Guitare, basse, batterie, voix…
+  </div>
+</div>
+
+<div class="footer">Lecteur multipiste pédagogique · Steeve Langevin</div>
+
+<script>
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let actx = null;
+let tracks = [];
+let isPlaying = false;
+let startTime = 0;
+let pauseOffset = 0;
+let animFrame = null;
+let loopActive = false;
+let globalDuration = 0;
+
+const COLORS = ['#c8a96e','#5a9e6f','#4a7fa5','#a05a9e','#c0504a','#5a8fa0','#9e8a4a','#7a9e5a','#9e5a7a','#4a9e8a','#8a5a4a','#5a4a9e'];
+
+function getActx() {
+  if (!actx) actx = new AudioContext();
+  return actx;
+}
+
+function addTrack() {
+  if (tracks.length >= 12) return;
+  const id = Date.now();
+  const idx = tracks.length;
+  const track = {
+    id, idx,
+    name: 'Piste ' + (idx + 1),
+    color: COLORS[idx % COLORS.length],
+    buffer: null,
+    source: null,
+    gainNode: null,
+    volume: 0.8,
+    muted: false,
+    solo: false,
+    loaded: false,
+    filename: null
+  };
+  tracks.push(track);
+  renderTrack(track);
+  updateTrackCount();
+  document.getElementById('empty-state').style.display = 'none';
+}
+
+function renderTrack(track) {
+  const list = document.getElementById('tracks-list');
+  const div = document.createElement('div');
+  div.className = 'track';
+  div.id = 'track-' + track.id;
+  div.innerHTML = `
+    <div class="track-left">
+      <div class="track-name-wrap">
+        <div class="track-color" style="background:${track.color}"></div>
+        <input class="track-name" type="text" value="${track.name}" onchange="renameTrack(${track.id}, this.value)" />
+      </div>
+      <label class="track-file-label" id="file-label-${track.id}" for="file-${track.id}">
+        ＋ Charger un MP3
+      </label>
+      <input type="file" id="file-${track.id}" accept="audio/mp3,audio/mpeg,audio/*" onchange="loadFile(${track.id}, this)">
+    </div>
+    <div class="track-center">
+      <input type="range" class="track-volume" min="0" max="1" step="0.01" value="${track.volume}"
+        oninput="setVolume(${track.id}, this.value)">
+      <span class="volume-label" id="vol-label-${track.id}">${Math.round(track.volume * 100)}</span>
+      <div class="vu-meter"><div class="vu-fill" id="vu-${track.id}"></div></div>
+    </div>
+    <div class="track-right">
+      <button class="btn-track btn-mute" id="mute-${track.id}" onclick="toggleMute(${track.id})">M</button>
+      <button class="btn-track btn-solo" id="solo-${track.id}" onclick="toggleSolo(${track.id})">S</button>
+      <button class="btn-remove" onclick="removeTrack(${track.id})" title="Supprimer">✕</button>
+    </div>
+  `;
+  list.appendChild(div);
+}
+
+function renameTrack(id, name) {
+  const t = tracks.find(t => t.id === id);
+  if (t) t.name = name;
+}
+
+async function loadFile(id, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const t = tracks.find(t => t.id === id);
+  if (!t) return;
+
+  const label = document.getElementById('file-label-' + id);
+  label.textContent = '⏳ Chargement…';
+  label.classList.remove('loaded');
+
+  const ctx = getActx();
+  const arrayBuffer = await file.arrayBuffer();
+  try {
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    t.buffer = audioBuffer;
+    t.loaded = true;
+    t.filename = file.name;
+    label.textContent = '✓ ' + file.name.replace(/\.[^.]+$/, '');
+    label.classList.add('loaded');
+    if (audioBuffer.duration > globalDuration) {
+      globalDuration = audioBuffer.duration;
+    }
+  } catch(e) {
+    label.textContent = '⚠ Erreur de chargement';
+  }
+}
+
+function setVolume(id, val) {
+  const t = tracks.find(t => t.id === id);
+  if (!t) return;
+  t.volume = parseFloat(val);
+  if (t.gainNode) t.gainNode.gain.value = t.muted ? 0 : t.volume;
+  document.getElementById('vol-label-' + id).textContent = Math.round(val * 100);
+}
+
+function toggleMute(id) {
+  const t = tracks.find(t => t.id === id);
+  if (!t) return;
+  t.muted = !t.muted;
+  if (t.gainNode) t.gainNode.gain.value = t.muted ? 0 : t.volume;
+  const btn = document.getElementById('mute-' + id);
+  btn.classList.toggle('active', t.muted);
+  const trackEl = document.getElementById('track-' + id);
+  trackEl.classList.toggle('muted', t.muted);
+}
+
+function toggleSolo(id) {
+  const t = tracks.find(t => t.id === id);
+  if (!t) return;
+  t.solo = !t.solo;
+  const btn = document.getElementById('solo-' + id);
+  btn.classList.toggle('active', t.solo);
+
+  const anySolo = tracks.some(t => t.solo);
+  tracks.forEach(tr => {
+    if (tr.gainNode) {
+      const eff = anySolo ? (tr.solo ? tr.volume : 0) : (tr.muted ? 0 : tr.volume);
+      tr.gainNode.gain.value = eff;
+    }
+    const el = document.getElementById('track-' + tr.id);
+    if (el) el.classList.toggle('solo-active', tr.solo);
+  });
+}
+
+function togglePlay() {
+  if (isPlaying) {
+    pauseAll();
+  } else {
+    playAll();
+  }
+}
+
+function playAll() {
+  const ctx = getActx();
+  if (ctx.state === 'suspended') ctx.resume();
+
+  const loadedTracks = tracks.filter(t => t.loaded && t.buffer);
+  if (loadedTracks.length === 0) return;
+
+  const anySolo = tracks.some(t => t.solo);
+  startTime = ctx.currentTime - pauseOffset;
+
+  loadedTracks.forEach(t => {
+    const source = ctx.createBufferSource();
+    source.buffer = t.buffer;
+    source.playbackRate.value = parseFloat(document.getElementById('speed').value);
+    source.detune.value = currentPitch * 100; // 100 cents = 1 demi-ton
+
+    const gain = ctx.createGain();
+    const eff = anySolo ? (t.solo ? t.volume : 0) : (t.muted ? 0 : t.volume);
+    gain.gain.value = eff;
+
+    source.connect(gain);
+    gain.connect(ctx.destination);
+
+    source.start(0, pauseOffset);
+    t.source = source;
+    t.gainNode = gain;
+
+    source.onended = () => {
+      if (isPlaying && !loopActive) {
+        // natural end
+      }
+    };
+  });
+
+  isPlaying = true;
+  document.getElementById('btn-play').textContent = '⏸';
+  document.getElementById('btn-play').classList.add('active');
+  animateProgress();
+}
+
+function pauseAll() {
+  pauseOffset = getCurrentTime();
+  stopSources();
+  isPlaying = false;
+  document.getElementById('btn-play').textContent = '▶';
+  document.getElementById('btn-play').classList.remove('active');
+  cancelAnimationFrame(animFrame);
+}
+
+function stopAll() {
+  pauseOffset = 0;
+  stopSources();
+  isPlaying = false;
+  document.getElementById('btn-play').textContent = '▶';
+  document.getElementById('btn-play').classList.remove('active');
+  cancelAnimationFrame(animFrame);
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('time-display').textContent = '0:00.0';
+}
+
+function stopSources() {
+  tracks.forEach(t => {
+    if (t.source) {
+      try { t.source.stop(); } catch(e) {}
+      t.source = null;
+      t.gainNode = null;
+    }
+  });
+}
+
+function getCurrentTime() {
+  if (!actx) return 0;
+  if (!isPlaying) return pauseOffset;
+  return actx.currentTime - startTime;
+}
+
+function animateProgress() {
+  const update = () => {
+    if (!isPlaying) return;
+    const cur = getCurrentTime();
+    const dur = globalDuration || 1;
+
+    // Loop handling
+    if (loopActive) {
+      const ls = parseFloat(document.getElementById('loop-start').value) || 0;
+      const le = parseFloat(document.getElementById('loop-end').value) || dur;
+      if (cur >= le) {
+        pauseOffset = ls;
+        stopSources();
+        playAll();
+        return;
+      }
+    }
+
+    if (cur >= dur && dur > 0) {
+      stopAll();
+      return;
+    }
+
+    const pct = Math.min((cur / dur) * 100, 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+
+    const m = Math.floor(cur / 60);
+    const s = Math.floor(cur % 60);
+    const ms = Math.floor((cur % 1) * 10);
+    document.getElementById('time-display').textContent =
+      m + ':' + String(s).padStart(2,'0') + '.' + ms;
+
+    animFrame = requestAnimationFrame(update);
+  };
+  animFrame = requestAnimationFrame(update);
+}
+
+function seekTo(e) {
+  const bg = document.getElementById('progress-bg');
+  const rect = bg.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  const dur = globalDuration || 1;
+  pauseOffset = Math.max(0, Math.min(pct * dur, dur));
+  if (isPlaying) {
+    stopSources();
+    playAll();
+  } else {
+    document.getElementById('progress-fill').style.width = (pct * 100) + '%';
+  }
+}
+
+let currentPitch = 0;
+let currentSpeedPct = 100;
+
+function adjustSpeed(delta) {
+  currentSpeedPct = Math.max(50, Math.min(150, currentSpeedPct + delta));
+  document.getElementById('speed-val').textContent = currentSpeedPct + '%';
+  document.getElementById('speed').value = currentSpeedPct / 100;
+  const val = currentSpeedPct / 100;
+  if (isPlaying) {
+    const offset = getCurrentTime();
+    pauseOffset = offset;
+    stopSources();
+    playAll();
+  }
+}
+
+function resetSpeed() {
+  currentSpeedPct = 100;
+  document.getElementById('speed-val').textContent = '100%';
+  document.getElementById('speed').value = 1;
+  if (isPlaying) { pauseOffset = getCurrentTime(); stopSources(); playAll(); }
+}
+
+function adjustPitch(delta) {
+  currentPitch = Math.max(-6, Math.min(6, currentPitch + delta));
+  const label = currentPitch > 0 ? '+' + currentPitch : '' + currentPitch;
+  document.getElementById('pitch-val').textContent = label;
+  if (isPlaying) { pauseOffset = getCurrentTime(); stopSources(); playAll(); }
+}
+
+function resetPitch() {
+  currentPitch = 0;
+  document.getElementById('pitch-val').textContent = '0';
+  if (isPlaying) { pauseOffset = getCurrentTime(); stopSources(); playAll(); }
+}
+
+function setSpeed(val) {
+  currentSpeedPct = Math.round(parseFloat(val) * 100);
+  document.getElementById('speed-val').textContent = currentSpeedPct + '%';
+  if (isPlaying) {
+    pauseOffset = getCurrentTime();
+    stopSources();
+    playAll();
+  }
+}
+
+function toggleLoop() {
+  loopActive = !loopActive;
+  const btn = document.getElementById('btn-loop');
+  btn.classList.toggle('active', loopActive);
+  const wrap = document.getElementById('loop-times-wrap');
+  wrap.style.display = loopActive ? 'flex' : 'none';
+}
+
+function removeTrack(id) {
+  const idx = tracks.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const t = tracks[idx];
+  if (t.source) { try { t.source.stop(); } catch(e) {} }
+  tracks.splice(idx, 1);
+  const el = document.getElementById('track-' + id);
+  if (el) el.remove();
+  updateTrackCount();
+  if (tracks.length === 0) {
+    document.getElementById('empty-state').style.display = 'block';
+    globalDuration = 0;
+  }
+}
+
+async function loadMultipleFiles(input) {
+  const files = Array.from(input.files);
+  const available = 12 - tracks.length;
+  const toLoad = files.slice(0, available);
+  for (const file of toLoad) {
+    addTrack();
+    const track = tracks[tracks.length - 1];
+    const label = document.getElementById('file-label-' + track.id);
+    label.textContent = '⏳ Chargement…';
+    const ctx = getActx();
+    const arrayBuffer = await file.arrayBuffer();
+    try {
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+      track.buffer = audioBuffer;
+      track.loaded = true;
+      track.filename = file.name;
+      const cleanName = file.name.replace(/\.[^.]+$/, '');
+      track.name = cleanName;
+      document.querySelector('#track-' + track.id + ' .track-name').value = cleanName;
+      label.textContent = '✓ ' + cleanName;
+      label.classList.add('loaded');
+      if (audioBuffer.duration > globalDuration) globalDuration = audioBuffer.duration;
+    } catch(e) {
+      label.textContent = '⚠ Erreur';
+    }
+  }
+  if (files.length > available) {
+    alert('Maximum 12 pistes atteint — ' + (files.length - available) + ' fichier(s) ignoré(s).');
+  }
+  input.value = '';
+}
+
+function updateTrackCount() {
+  document.getElementById('track-count').textContent = tracks.length;
+}
+</script>
+</body>
+</html>
