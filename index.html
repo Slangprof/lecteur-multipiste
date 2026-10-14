@@ -581,7 +581,7 @@ body {
 <header class="app-header">
   <span class="brand-button" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
   <h1><span>LECTEUR</span> <strong>MULTIPISTE</strong></h1>
-  <small class="version-label">v1.1.1</small>
+  <small class="version-label">v1.1.2</small>
 </header>
 <p class="subtitle">Chargez vos pistes MP3 — volume, mute, solo, vitesse et boucle</p>
 
@@ -645,7 +645,7 @@ body {
   <div class="tracks-header-label">Pistes (<span id="track-count">0</span>/12)</div>
   <div style="display:flex; gap:8px;">
     <button class="btn-add" onclick="document.getElementById('multi-file-input').click()">⤴ Charger plusieurs MP3</button>
-    <input type="file" id="multi-file-input" multiple onchange="loadMultipleFiles(this)" style="display:none;">
+    <input type="file" id="multi-file-input" accept="audio/*,.mp3,.m4a,.wav,.aac" multiple onchange="loadMultipleFiles(this)" style="display:none;">
     <button class="btn-add" onclick="addTrack()">＋ Ajouter une piste vide</button>
   </div>
 </div>
@@ -723,7 +723,7 @@ function renderTrack(track) {
       <button class="track-file-label" id="file-label-${track.id}" onclick="document.getElementById('file-${track.id}').click()">
         ＋ Charger un MP3
       </button>
-      <input type="file" id="file-${track.id}" onchange="loadFile(${track.id}, this)" style="display:none;">
+      <input type="file" id="file-${track.id}" accept="audio/*,.mp3,.m4a,.wav,.aac" onchange="loadFile(${track.id}, this)" style="display:none;">
     </div>
     <div class="track-center">
       <input type="range" class="track-volume" min="0" max="1" step="0.01" value="${track.volume}"
